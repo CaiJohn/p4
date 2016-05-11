@@ -1,0 +1,527 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Disassembler" rel="Chapter" href="Disassembler.html"><link title="Lua Instructions" rel="Section" href="#6_LuaInstructions">
+<link title="API" rel="Section" href="#6_API">
+<link title="Arithmetic Operations" rel="Subsection" href="#7_ArithmeticOperations">
+<link title="Comparisons" rel="Subsection" href="#7_Comparisons">
+<link title="Instructions Representations" rel="Subsection" href="#7_InstructionsRepresentations">
+<title>Disassembler</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a href="index.html">Up</a>
+&nbsp;</div>
+<center><h1>Module <a href="type_Disassembler.html">Disassembler</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Disassembler: <code class="code">sig</code> <a href="Disassembler.html">..</a> <code class="code">end</code></pre>A module for disassembling lua bytecode<br>
+<hr width="100%">
+<pre><span id="TYPElua_const"><span class="keyword">type</span> <code class="type"></code>lua_const</span> = <code class="type">[ `L_Bool of bool | `L_Double of float | `L_Nill | `L_String of string ]</code> </pre>
+<div class="info">
+Primitive values supported by the Lua VM. "Nill" should be "Nil" but is kept "Nill" for consistency with the assembler.<br>
+</div>
+
+<pre><span id="TYPErk_source"><span class="keyword">type</span> <code class="type"></code>rk_source</span> = <code class="type">[ `L_Bool of bool<br>       | `L_Double of float<br>       | `L_Nill<br>       | `L_String of string<br>       | `Register of int ]</code> </pre>
+<div class="info">
+Some instructions allow for direct references to constants to appear in the source operands along with registers.
+    In the "No Frills" guide, an instruction uses an rk_source when when the operands in the RTL representation of the instructions use RK(A) or RK(B)<br>
+</div>
+
+<br>
+<span id="6_LuaInstructions"><h6>Lua Instructions</h6></span><br>
+<br>
+<span id="7_ArithmeticOperations"><div class="h7">Arithmetic Operations</div></span><br>
+<br><code><span id="TYPEarith_op_types"><span class="keyword">type</span> <code class="type"></code>arith_op_types</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Arith_Add</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Arith_Sub</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Arith_Mul</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Arith_Div</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Arith_Mod</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Arith_Pow</span></code></td>
+
+</tr></table>
+
+
+<br>
+The type of arithmetic operation for an arithmetic operation<br>
+<br><code><span id="TYPEarith_op"><span class="keyword">type</span> <code class="type"></code>arith_op</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>op_type&nbsp;: <code class="type"><a href="Disassembler.html#TYPEarith_op_types">arith_op_types</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The operator used in this operation.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>left_src&nbsp;: <code class="type"><a href="Disassembler.html#TYPErk_source">rk_source</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The left operand, that is, the value on the left of the operator</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>right_src&nbsp;: <code class="type"><a href="Disassembler.html#TYPErk_source">rk_source</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The right operand, that is, the value on the right of the operator</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>dest&nbsp;: <code class="type">int</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The destination register in which to store the result of this arithmetic operation</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+<div class="info">
+A common representation of an arithmetic expression.<br>
+</div>
+
+<br>
+<span id="7_Comparisons"><div class="h7">Comparisons</div></span><br>
+<br><code><span id="TYPEcomparison_type"><span class="keyword">type</span> <code class="type"></code>comparison_type</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Comp_Eq</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Comp_Lt</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Comp_Le</span></code></td>
+
+</tr></table>
+
+
+<br>
+The comparisons possible in a Comparison instruction. The names are self-explanatory<br>
+<br><code><span id="TYPEcomparison_op"><span class="keyword">type</span> <code class="type"></code>comparison_op</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>skip_if_not&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >A comparison instruction will skip the next instruction if the result of the comparison is NOT equal to this field</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>right_operand&nbsp;: <code class="type"><a href="Disassembler.html#TYPErk_source">rk_source</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The operand on the right side of the comparison</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>left_operand&nbsp;: <code class="type"><a href="Disassembler.html#TYPErk_source">rk_source</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The operand of the left side of the comparison</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>comp_type&nbsp;: <code class="type"><a href="Disassembler.html#TYPEcomparison_type">comparison_type</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The type of comparison that this comparison_op encodes.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+
+<br>
+A common representation of comparison operations. See page 35 for details on how Lua encodes conditionals.<br>
+<br>
+<span id="7_InstructionsRepresentations"><div class="h7">Instructions Representations</div></span><br>
+<br><code><span id="TYPEreturn_val"><span class="keyword">type</span> <code class="type"></code>return_val</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">No_Value</span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Return no value from the function</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Return_One</span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Return one value from the function: the contents of the specified register</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Return_Many</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Return_Many (r,n)</code> return <code class="code">n</code> values, starting at register <code class="code">r</code></td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Return_All</span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Returns all registers from the specified register to the top of the stack</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info">
+An abstraction away from the complexities of returning values from a function.<br>
+</div>
+
+<br><code><span id="TYPElua_ops"><span class="keyword">type</span> <code class="type"></code>lua_ops</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Load_Const</span> <span class="keyword">of</span> <code class="type">int * <a href="Disassembler.html#TYPElua_const">lua_const</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Loads the specified constant into the named register</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Get_Global</span> <span class="keyword">of</span> <code class="type">int * string</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Loads the global variable identified by the string into the specified register</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Set_Global</span> <span class="keyword">of</span> <code class="type">string * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Set_Global (global_name,src_reg)</code> sets the global variable with the name <code class="code">global_name</code> to the value in register <code class="code">src_reg</code></td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Load_Nil</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Load_Nil (start,end)</code> sets the registers between <code class="code">start</code> and <code class="code">end</code> (inclusive) to nil</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Load_Bool</span> <span class="keyword">of</span> <code class="type">int * bool * bool</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Load_Bool (dst,boolean_val,skip_next)</code> places the boolean value <code class="code">boolean_val</code> in register <code class="code">dst</code>. If <code class="code">skip_next</code> is true, then the next instruction is skipped</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Get_Upvalue</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Get_Upvalue (dst,index)</code> gets the upvalue with index <code class="code">index</code> and places it in register <code class="code">dst</code>. It can also be used to make an upvalue into another for a function loaded with the Closure instruction. See page 52 of the no frills guide and the documentation for the closure function for details.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Set_Upvalue</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Set_Upvalue (dst_index,src_reg)</code> places the value in <code class="code">src_reg</code> into the upvalue at index <code class="code">dst_index</code></td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Unary_Minus</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Unary_Minus (a,b)</code> negates the value in <code class="code">b</code> and places it in register <code class="code">a</code></td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Unary_Not</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Unary_Plus (a,b)</code> performs a boolean not on the value in <code class="code">b</code> and places the result in register <code class="code">a</code></td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Length</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Length (dst,src)</code> finds the length (or size) or <code class="code">src</code> and places it in <code class="code">dst</code></td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Concat</span> <span class="keyword">of</span> <code class="type">int * int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Concat (dst,start,end)</code> String concatenates a range of registers starting at <code class="code">start</code> and ending with <code class="code">end</code> and places the result in <code class="code">dst</code></td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Jump</span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Performs an unconditional jump by adding the displacement (which may be negative) to the PC</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Tail_Call</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Performs a tail call which is effectively a goto. The function resides in the register identified by the first argument, and the second argument encodes the parameters similarly to the Call instruction</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Vararg</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Implements the vararg operator. The first element of the tuple encodes the A field, and the second element encodes the B field.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Self</span> <span class="keyword">of</span> <code class="type">int * int * <a href="Disassembler.html#TYPErk_source">rk_source</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Self (dst,table,key)</code> is short-hand for R(dst) := R(table)<code class="code">key</code>; R(dst+1) := R(table). It is used if OO in lua</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Cmp</span> <span class="keyword">of</span> <code class="type"><a href="Disassembler.html#TYPEcomparison_op">comparison_op</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Comparison instruction that incorporates the LT, EQ, and LE instructions. See <a href="Disassembler.html#TYPEcomparison_op"><code class="code">Disassembler.comparison_op</code></a> for an explanation of the fields</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Test</span> <span class="keyword">of</span> <code class="type">int * bool</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >See page 37 of the no frills guide for details. The first tuple member is the a field and the second member is the C field coerced to a boolean</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Test_Set</span> <span class="keyword">of</span> <code class="type">int * int * bool</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >See page 37  of the no frills guide for details. The first and second tuple members are the A and B fields respectively. The third member is the C field coerced to a boolean</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">For_Prep</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >See page 42 of the no frills guide for details. The first tuple member is the value of the A field, and the second element is the displacement</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">For_Loop</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >See page 42 of the no frills guide for details The first tuple member is the value of the A field, and the second element is the displacement.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">T_For_Loop</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >See page 45 of the no frills guide for details. The first tuple member is the value of the A field, and the second element is the displacement.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Close</span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Close a</code> Closes all local variables from register <code class="code">a</code> to the top of the stack. See page 54 of the no frills guide for details.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Move</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Move (dst,src)</code> sets the contents of register <code class="code">dst</code> to that of register <code class="code">src</code>. It is also a pseudo-instruction that makes a register into an upvalue; see page 52 in the no frills guide for details.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Arith</span> <span class="keyword">of</span> <code class="type"><a href="Disassembler.html#TYPEarith_op">arith_op</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >An arithmetic operation</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Call</span> <span class="keyword">of</span> <code class="type">int * int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Call (fn,args,ret)</code> calls the function loaded into register <code class="code">fn</code>. There are <code class="code">args-1</code> arguments passed to this function. These arguments reside in registers <code class="code">fn+1</code> to <code class="code">fn+(args-1)</code>. There are <code class="code">ret-1</code> return values saved. These return value(s) function are stored in <code class="code">fn</code> to <code class="code">fn + (ret - 2)</code>.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Closure</span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Closure (dst,function_index)</code> loads the closure at <code class="code">function_index</code> the current function unit's child functions into <code class="code">dst</code>. See <a href="Disassembler.html#TYPEfunction_unit"><code class="code">Disassembler.function_unit</code></a> for details on child functions. Following this instruction are <code class="code">n</code> pseudo-instructions, where <code class="code">n</code> is the number of upvalues required by the loaded function. These pseudo-instructions store a either a local register of an upvalue as an upvalue for the loaded function, depending on whether the pseudo-instruction is a Moive or a Get_Upvalue instruction respectively. The B field (src field) of these instructions identifies which register/upvalue should be used as an upvalue. See page 52 in the no frills guide for details.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Load_Table</span> <span class="keyword">of</span> <code class="type">int * int * <a href="Disassembler.html#TYPErk_source">rk_source</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Load_Table (dst,table,key)</code> loads value associated with <code class="code">key</code> in the table whose reference is stored in the register <code class="code">table</code> into the register <code class="code">dst</code>. <code class="code">key</code> may be a number (for array lookups), or a string (for hash tables).</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Set_Table</span> <span class="keyword">of</span> <code class="type">int * <a href="Disassembler.html#TYPErk_source">rk_source</a> * <a href="Disassembler.html#TYPErk_source">rk_source</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Set_Table (table,k,v)</code> associates the key <code class="code">k</code> with the value <code class="code">v</code> in the table whose reference is stored in the register <code class="code">table</code>. <code class="code">k</code> may be an integer or a string, and <code class="code">v</code> may be any value, including a register whose contents is a reference to another table, in which case <code class="code">k</code> is associated with a reference to the table.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Set_List</span> <span class="keyword">of</span> <code class="type">int * int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Set_List (table,page,n)</code> sets a range of numerical indices in the table to values in the registers <code class="code">table+1</code> to <code class="code">table+n</code> inclusive. The numerical indices set in the table are <code class="code">(page-1)*50</code> to <code class="code">(page-1)*50+n</code>. Note that page must be offset by 1, a <code class="code">page</code> value of 0 will not work as expected.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Make_Table</span> <span class="keyword">of</span> <code class="type">int * int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><code class="code">Make_Table (dst,n_array,n_hash)</code> initializes a new table in the register <code class="code">dst</code> that has <code class="code">n_array</code> array slots pre-allocated and <code class="code">n_hash</code>  hash slots pre-allocated. These values are hints, and using more hash slots than specified in <code class="code">n_hash</code> or using array indices greater than <code class="code">n_array</code> is not an error</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Return</span> <span class="keyword">of</span> <code class="type"><a href="Disassembler.html#TYPEreturn_val">return_val</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >Returns a value from the function.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+
+<br>
+The instructions supported by the Lua 5.1 virtual machine. The following are the general rules of thumb regarding the ordering of members in tags that have tuples as their arguments
+<ul>
+<li>Pseudo-instructions are represented by records. These include the Arith and Cmp instructions</li>
+<li>The elements are ordered in the form (dst,src1,...). The order of the src elements is done by reading left to right in the RTL representation found accompanying each instruction in the no frill guide. <b>Note:</b> this can lead to an order of elements that is inconsistent with the A B C order of fields found in the no frills guide. For instance, the Set_Upvalue instruction encodes the source value in the A (i.e. first) field, but this appears as the <em>second</em> element of the tuple for the Set_Upvalue instruction. Instructions with this inconsistent ordering are: Set_Upvalue, Set_Global, and Set_List</li>
+<li>If there is no clear destination or source, and the instruction deals with some concept of "start" and "end" or "start" and "amount", start is the first element and the end (or "amount") is the second element. This includes the Vararg, Concat, and Load_Nil instructions</li>
+<li>if none of the above rules apply, then the elements' correspond to the position in the field list, that is, A B C, A Bx, or A sBx, depending on the instruction type </li>
+</ul>
+<br>
+<br>
+<span id="6_API"><h6>API</h6></span><br>
+<br><code><span id="TYPEvararg_flags"><span class="keyword">type</span> <code class="type"></code>vararg_flags</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">VarArg_HasArg</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">VarArg_IsVarArg</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">VarArg_NeedsArg</span></code></td>
+
+</tr></table>
+
+
+<br>
+Flags that control the vararg behavior of a function. See page 9 of the no frills guide for details<br>
+<br><code><span id="TYPEfunction_unit"><span class="keyword">type</span> <code class="type"></code>function_unit</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>instructions&nbsp;: <code class="type"><a href="Disassembler.html#TYPElua_ops">lua_ops</a> list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The list of instructions that compose the body of this function</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>num_params&nbsp;: <code class="type">int</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The number of formal parameters to this function</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>vararg&nbsp;: <code class="type"><a href="Disassembler.html#TYPEvararg_flags">vararg_flags</a> list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The vararg flags for this function. See page 9 of the no frills guide for details.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>num_upvalues&nbsp;: <code class="type">int</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The number of upvalues of used by this function.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>child_functions&nbsp;: <code class="type"><a href="Disassembler.html#TYPEfunction_unit">function_unit</a> list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The child functions accessible within this function. These functions are loaded via the closure instruction, and they are identified by the numeric index in this list.</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+
+<br>
+Represents what the no frills guide calls a binary chunk (what is referred to as a function_unit in this documentation.<br>
+<pre><span id="VALdisassemble"><span class="keyword">val</span> disassemble</span> : <code class="type">Pervasives.in_channel -> <a href="Disassembler.html#TYPEfunction_unit">function_unit</a></code></pre><div class="info">
+Disassembles the lua bytecode file from the first argument. Returns the <a href="Disassembler.html#TYPEfunction_unit"><code class="code">Disassembler.function_unit</code></a> for the top-level binary chunk<br>
+</div>
+<pre><span id="VALdump_function"><span class="keyword">val</span> dump_function</span> : <code class="type">int -> <a href="Disassembler.html#TYPEfunction_unit">function_unit</a> -> unit</code></pre><div class="info">
+Pretty prints a function_unit on standard out. For debugging purposes.<br>
+</div>
+<pre><span id="VALdump_instruction"><span class="keyword">val</span> dump_instruction</span> : <code class="type"><a href="Disassembler.html#TYPElua_ops">lua_ops</a> -> string</code></pre><div class="info">
+Returns a pretty printed representation of an instruction to standard out. The string representation resembles the RTL found in the no frills guide, but differs in some places and is non-standard and for debugging purposes <b>only</b>.<br>
+</div>
+</body></html>
