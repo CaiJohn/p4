@@ -22,15 +22,15 @@ let _ = close_in input_chan in
 	  Printf.printf "Reaching definitions\n";
 	  dump_res (fun o n -> Printf.fprintf o "%d" n) r
     | "ae" ->
-	let r = do_dfa (avail_exprs instrs) in
-	  Printf.printf "Available expressions\n";
-	  dump_res output_expr r
+        let r = do_dfa (avail_exprs instrs) in
+          Printf.printf "Available expressions\n";
+          dump_res output_expr r
     | "lv" ->
-	let r = do_dfa (live_vars instrs) in
-	  Printf.printf "Live variables\n";
-	  dump_res (fun o n -> Printf.fprintf o "%d" n) r
+        let r = do_dfa (live_vars instrs) in
+          Printf.printf "Live variables\n";
+          dump_res (fun o n -> Printf.fprintf o "%d" n) r
     | "vb" ->
-	let r = do_dfa (very_busy_exprs instrs) in
-	  Printf.printf "Very busy expressions\n";
-	  dump_res output_expr r
+        let r = do_dfa (very_busy_exprs instrs) in
+          Printf.printf "Very busy expressions\n";
+          dump_res output_expr r
     | _ -> failwith "Unknown command"
