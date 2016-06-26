@@ -33,6 +33,16 @@ type 'a bvset = ('a,int) Hashtbl.t * (int,'a) Hashtbl.t * int array
 
 type 'a bvset = 'a list * 'a list (* all elts, cur elts *)
 
+let string_of_set pr (s:'a bvset) =
+  match s with
+  | (s1,s2) ->
+     List.fold_left
+       (fun r item ->
+         (pr item)^" "^r)
+       ""
+       s2
+;;
+                           
 let mkempty all = (all, [])
 
 let insert x (all, elts) =

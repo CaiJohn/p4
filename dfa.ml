@@ -145,7 +145,11 @@ let reach_defs (instrs:lua_ops array):int dfa =
         (fun index ->
           match Array.get instrs index with
           | Load_Const (dst,_) ->
-             ((insert index bvs),(remove index (find_reg_def reg_def dst)))
+             let gen = insert index bvs in
+             let kill = remove index (find_reg_def reg_def dst) in
+             (* let () = print_endline ("index"^(string_of_int index)) in *)
+             (* let () = print_endline (string_of_set string_of_int kill) in *)
+             (gen, kill)
           | Load_Nil (f,t) ->
              if f=t
              then ((insert f bvs),(remove f (find_reg_def reg_def f)))
@@ -168,7 +172,11 @@ let reach_defs (instrs:lua_ops array):int dfa =
              ((insert index bvs),(remove index (find_reg_def reg_def dst)))
           | Arith aop->
              let dst = aop.dest in
-             ((insert index bvs),(remove index (find_reg_def reg_def dst)))
+             let gen = insert index bvs in
+             let kill = remove index (find_reg_def reg_def dst) in
+             (* let () = print_endline ("index"^(string_of_int index)) in *)
+             (* let () = print_endline (string_of_set string_of_int kill) in *)
+             (gen, kill)
           | Return _ ->
              (bvs, bvs)
           | _ ->
@@ -220,9 +228,16 @@ let pred (instrs : lua_ops array) (i:int):int list =
   let visit (res,pc) item =
     match item with
     | Jump offset ->
-       if pc+offset = i
+       if pc+offset = i-1
        then (pc::res,pc+1)
        else (res,pc+1)
+    | Cmp _ ->
+       if pc = i-2
+       then (pc::res, pc+1)
+       else
+         if pc = i-1
+         then (pc::res,pc+1)
+         else (res,pc+1)
     | _ ->
        if pc = i-1
        then (pc::res,pc+1)
@@ -259,22 +274,24 @@ let do_dfa (d : 'a dfa) : 'a dfa_result =
       top=top;
     } ->
      (* ********** *)
+     (* a result is an array, where the ith element denotes the result between instructions i-1 and i. *)
+     (* take an old result 'old',  *)
      let calc old dir may_must gen_kill=
        let combine = match may_must with K_Must -> inter | K_May -> union in
-       let (source,offset) = match dir with D_Forward -> (pred,1) | D_Backward -> (succ,0) in
+       let source = match dir with D_Forward -> pred | D_Backward -> succ in
        let res = Array.copy old in
        let () =
-         Array.iteri
+         Array.iteri (* iterate over the instrutions *)
            (fun index instr ->
              (* combine information from all the pred/succ *)
              let sum = List.fold_left
                          (fun res item ->
-                           combine res (Array.get old (item+offset)))
+                           combine res (Array.get old item))
                          top
-                         (source instrs index) 
+                         (source instrs index)
              in
              let (gen,kill) = gen_kill index in
-             Array.set res (index+offset) (diff (union sum gen) kill)
+             Array.set res index (diff (union sum gen) kill)
            )
            instrs
        in
@@ -299,13 +316,15 @@ let do_dfa (d : 'a dfa) : 'a dfa_result =
        then res
        else iter res
      in
-     (* ********** *)
-     let init = Array.make ((Array.length instrs)+1) top in
+     let init = Array.make (Array.length instrs) top in
      iter init
 ;;
      
 
 
+(* An analysis is a structure, do_dfa will take an analysis, iterate until a stablized answer is got. *)
+                                                              
+                                                                   
 (* forward *)
 (* 0     1      2       3 *)
 (*    0 ----> 1 ----> 2    *)
